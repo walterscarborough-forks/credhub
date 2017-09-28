@@ -2,7 +2,6 @@ package io.pivotal.security.generator;
 
 import io.pivotal.security.credential.CertificateCredentialValue;
 import io.pivotal.security.domain.CertificateParameters;
-import io.pivotal.security.request.CertificateGenerationParameters;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
@@ -158,7 +157,7 @@ public class SignedCertificateGenerator {
   }
 
   private X500Principal getSubjectNameFrom(X509Certificate certificate) throws IOException, CertificateException {
-    return new X500Principal(certificate.getSubjectDN().getName());
+    return new X500Principal(certificate.getSubjectX500Principal().getEncoded());
   }
 
   private PrivateKey getPrivateKeyFrom(String privateKeyPem)
