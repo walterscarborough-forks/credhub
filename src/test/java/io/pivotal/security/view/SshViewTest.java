@@ -8,6 +8,7 @@ import io.pivotal.security.service.Encryption;
 import io.pivotal.security.util.TestConstants;
 import org.json.JSONObject;
 import org.junit.runner.RunWith;
+import org.skyscreamer.jsonassert.JSONAssert;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -62,7 +63,7 @@ public class SshViewTest {
           + "\"value\":"
           + obj.toString() + "}";
       String json = JsonTestHelper.serializeToString(subject);
-      assertThat(json, equalTo(expected));
+      JSONAssert.assertEquals(json, expected, false);
     });
 
     it("sets updated-at time on generated view", () -> {
