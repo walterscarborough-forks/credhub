@@ -6,7 +6,7 @@ buildscript {
         maven { url("https://plugins.gradle.org/m2/") }
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.9.RELEASE")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.13.RELEASE")
         classpath("org.owasp:dependency-check-gradle:3.1.1")
         classpath("org.springframework.build.gradle:propdeps-plugin:0.0.7")
     }
@@ -29,7 +29,6 @@ jar {
     }
 }
 sourceCompatibility = 1.8
-
 targetCompatibility = 1.8
 
 repositories {
@@ -37,14 +36,16 @@ repositories {
     jcenter()
 }
 
+ext['spring-security-oauth.version'] = '2.2.2.RELEASE'
+
 dependencies {
    [
             "org.springframework.boot:spring-boot-starter-web",
             "org.springframework.boot:spring-boot-starter-security",
             "org.springframework.boot:spring-boot-starter-data-jpa",
-            "org.springframework.security.oauth:spring-security-oauth2:2.2.1.RELEASE",
-            "org.springframework.security:spring-security-jwt:1.0.9.RELEASE",
-            "org.springframework.security:spring-security-test:5.0.1.RELEASE"
+            "org.springframework.security.oauth:spring-security-oauth2",
+            "org.springframework.security:spring-security-jwt",
+            "org.springframework.security:spring-security-test"
     ].each{
         compile(it) {
             exclude module: "spring-boot-starter-logging"
