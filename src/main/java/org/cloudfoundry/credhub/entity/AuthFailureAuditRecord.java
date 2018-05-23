@@ -226,4 +226,29 @@ public class AuthFailureAuditRecord {
     this.authMethod = authMethod;
     return this;
   }
+
+  @Override
+  public String toString() {
+    return "AuthFailureAuditRecord{" +
+        "id=" + id +
+        ", hostName='" + hostName + '\'' +
+        ", now=" + now +
+        ", path='" + path + '\'' +
+        ", authValidFrom=" + authValidFrom +
+        ", authValidUntil=" + authValidUntil +
+        ", authMethod='" + authMethod + '\'' +
+        ", failureDescription='" + failureDescription + '\'' +
+        ", uaaUrl='" + uaaUrl + '\'' +
+        ", userId='" + userId + '\'' +
+        ", userName='" + userName + '\'' +
+        ", requesterIp='" + requesterIp + '\'' +
+        ", xForwardedFor='" + xForwardedFor + '\'' +
+        ", clientId='" + clientId + '\'' +
+        ", scope='" + scope + '\'' +
+        ", grantType='" + grantType + '\'' +
+        ", method='" + method + '\'' +
+        ", statusCode=" + statusCode +
+        ", queryParameters='" + queryParameters + '\'' +
+        '}';
+  }
 }

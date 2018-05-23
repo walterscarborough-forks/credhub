@@ -1,6 +1,9 @@
 auth_server:
   url: https://example.com:8443
 
+audit_logs:
+  days_retained: 15
+
 encryption:
   keys:
   - encryption_password: opensesame

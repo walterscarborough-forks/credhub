@@ -163,4 +163,32 @@ public class RequestAuditRecord {
   public void setStatusCode(int statusCode) {
     this.statusCode = statusCode;
   }
+
+  public void setNow(Instant now) {
+    this.now = now;
+  }
+
+  @Override
+  public String toString() {
+    return "RequestAuditRecord{" +
+        "uuid=" + uuid +
+        ", hostName='" + hostName + '\'' +
+        ", now=" + now +
+        ", path='" + path + '\'' +
+        ", queryParameters='" + queryParameters + '\'' +
+        ", authValidFrom=" + authValidFrom +
+        ", authValidUntil=" + authValidUntil +
+        ", uaaUrl='" + uaaUrl + '\'' +
+        ", userId='" + userId + '\'' +
+        ", userName='" + userName + '\'' +
+        ", requesterIp='" + requesterIp + '\'' +
+        ", xForwardedFor='" + xForwardedFor + '\'' +
+        ", clientId='" + clientId + '\'' +
+        ", scope='" + scope + '\'' +
+        ", grantType='" + grantType + '\'' +
+        ", method='" + method + '\'' +
+        ", statusCode=" + statusCode +
+        ", authMethod='" + authMethod + '\'' +
+        '}';
+  }
 }

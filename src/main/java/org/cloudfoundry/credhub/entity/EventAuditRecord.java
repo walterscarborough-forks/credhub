@@ -99,4 +99,23 @@ public class EventAuditRecord {
   public String getAceActor() {
     return aceActor;
   }
+
+  public void setNow(Instant now) {
+    this.now = now;
+  }
+
+  @Override
+  public String toString() {
+    return "EventAuditRecord{" +
+        "uuid=" + uuid +
+        ", requestUuid=" + requestUuid +
+        ", now=" + now +
+        ", credentialName='" + credentialName + '\'' +
+        ", operation='" + operation + '\'' +
+        ", success=" + success +
+        ", actor='" + actor + '\'' +
+        ", aceOperation='" + aceOperation + '\'' +
+        ", aceActor='" + aceActor + '\'' +
+        '}';
+  }
 }
