@@ -336,11 +336,14 @@ public class CertificateGenerationRequestParametersTest {
 
   @Test
   public void validate_rejectsAlternativeNamesThatAreTooLong() {
-    String maxLengthAlternativeName = "64abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz012345.com";
+    String maxLengthAlternativeName = RandomStringUtils.randomAlphabetic(57) + "." + RandomStringUtils.randomNumeric(63) +
+        "." + RandomStringUtils.randomAlphabetic(63) + "." + RandomStringUtils.randomAlphabetic(63) + ".com";
     subject.setAlternativeNames(new String[]{"abc.com", maxLengthAlternativeName});
     subject.validate();
 
-    String overlyLongAlternativeName = "65_abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz012345.com";
+
+    String overlyLongAlternativeName = "." + RandomStringUtils.randomAlphabetic(58) + "." + RandomStringUtils.randomNumeric(63) +
+        "." + RandomStringUtils.randomAlphabetic(63) + "." + RandomStringUtils.randomAlphabetic(63) + ".co";
     subject.setAlternativeNames(new String[]{"abc.com", overlyLongAlternativeName});
 
     try {
