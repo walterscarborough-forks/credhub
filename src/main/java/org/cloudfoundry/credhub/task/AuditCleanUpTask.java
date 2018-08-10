@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 @EnableScheduling
 public class AuditCleanUpTask {
+  // "[Seconds] [Minutes] [Hours] [Day of month] [Month] [Day of week] [Year]"
   public static final String CRON_SCHEDULE = "0 0 0 * * *";
   private AuditCleanUpService service;
   private final Logger logger =  LogManager.getLogger();

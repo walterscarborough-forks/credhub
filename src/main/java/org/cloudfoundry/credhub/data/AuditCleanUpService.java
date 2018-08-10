@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 
 @Service
 public class AuditCleanUpService {
@@ -26,15 +27,15 @@ public class AuditCleanUpService {
   }
 
   public void cleanUp(Integer daysRetained){
-    requestAuditRecordRepository.deleteByNowBefore(cutOff(daysRetained));
-    eventAuditRecordRepository.deleteByNowBefore(cutOff(daysRetained));
-    authFailureAuditRecordRepository.deleteByNowBefore(cutOff(daysRetained));
+    requestAuditRecordRepository.deleteByDateBefore(cutOff(daysRetained));
+    eventAuditRecordRepository.deleteByDateBefore(cutOff(daysRetained));
+    authFailureAuditRecordRepository.deleteByDateBefore(cutOff(daysRetained));
   }
 
-  private Instant cutOff(Integer daysRetained){
+  private Long cutOff(Integer daysRetained){
     Instant instant = Instant.now();
     instant = instant.minus(daysRetained, ChronoUnit.DAYS);
 
-    return instant;
+    return Date.from(instant).getTime();
   }
 }
