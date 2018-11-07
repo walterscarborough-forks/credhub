@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIR="$(cd "$(dirname "$0")" && pwd)"
+DIR="$(cd "$(dirname "$0")"/.. && pwd)"
 
 mtlsDir="$1"
 if [[ -z "$mtlsDir" ]]; then
@@ -28,4 +28,4 @@ $(cat "$mtlsDir/client.crt" | sed -e 's/^/        /')
 $(cat "$mtlsDir/client.p8" | sed -e 's/^/        /')
 EOF
 
-$DIR/start_server.sh -Dspring.profiles.active=dev,dev-external-provider,dev-h2
+$DIR/scripts/start_server.sh -Dspring.profiles.active=dev,dev-external-provider,dev-h2

@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
 VERSION_FILE="$DIR/src/main/resources/version"
 
 branch=$(git show-ref --heads | grep `git rev-parse HEAD` | cut -d ' ' -f2 | cut -d '/' -f3)
