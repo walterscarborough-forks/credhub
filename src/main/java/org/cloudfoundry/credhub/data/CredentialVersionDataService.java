@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.collect.Lists.newArrayList;
 
@@ -66,32 +65,6 @@ public class CredentialVersionDataService {
 
     return (Z) credentialFactory
         .makeCredentialFromEntity(credentialVersionRepository.saveAndFlush(credentialVersionData));
-  }
-
-  public List<String> findAllPaths() {
-    return credentialDataService.findAll()
-        .stream()
-        .map(Credential::getName)
-        .flatMap(CredentialVersionDataService::fullHierarchyForPath)
-        .distinct()
-        .sorted()
-        .collect(Collectors.toList());
-  }
-
-  private static Stream<String> fullHierarchyForPath(String path) {
-    String[] components = path.split("/");
-    if (components.length > 1) {
-      StringBuilder currentPath = new StringBuilder();
-      List<String> pathSet = new ArrayList<>();
-      for (int i = 0; i < components.length - 1; i++) {
-        String element = components[i];
-        currentPath.append(element).append('/');
-        pathSet.add(currentPath.toString());
-      }
-      return pathSet.stream();
-    } else {
-      return Stream.of();
-    }
   }
 
   public CredentialVersion findMostRecent(String name) {
