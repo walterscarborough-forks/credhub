@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static org.cloudfoundry.credhub.helper.TestHelper.mockOutCurrentTimeProvider;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -435,35 +434,6 @@ public class CredentialVersionDataServiceTest {
 
     assertThat("appends trailing slash to path", credentials.get(0).getName().toLowerCase(),
         containsString("/credential/"));
-  }
-
-  @Test
-  public void findAllPaths_returnsCompleteDirectoryStructure() {
-    String valueOther = "/fubario";
-    String valueName = "/value/Credential";
-    String passwordName = "/password/Credential";
-    String certificateName = "/certif/ic/ateCredential";
-
-    ValueCredentialVersionData valueCredentialData = new ValueCredentialVersionData(valueOther);
-    ValueCredentialVersion valueCredential = new ValueCredentialVersion(valueCredentialData);
-    subject.save(valueCredential);
-
-    valueCredentialData = new ValueCredentialVersionData(valueName);
-    valueCredential = new ValueCredentialVersion(valueCredentialData);
-    subject.save(valueCredential);
-
-    PasswordCredentialVersionData passwordCredentialData = new PasswordCredentialVersionData(passwordName);
-    PasswordCredentialVersion passwordCredential = new PasswordCredentialVersion(passwordCredentialData);
-    subject.save(passwordCredential);
-
-    CertificateCredentialVersionData certificateCredentialData =
-        new CertificateCredentialVersionData(certificateName);
-    CertificateCredentialVersion certificateCredential = new CertificateCredentialVersion(
-        certificateCredentialData);
-    subject.save(certificateCredential);
-
-    assertThat(subject.findAllPaths(),
-        equalTo(newArrayList("/", "/certif/", "/certif/ic/", "/password/", "/value/")));
   }
 
   @Test

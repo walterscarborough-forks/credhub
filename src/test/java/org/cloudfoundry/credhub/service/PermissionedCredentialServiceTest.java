@@ -23,12 +23,14 @@ import org.cloudfoundry.credhub.request.BaseCredentialRequest;
 import org.cloudfoundry.credhub.request.PermissionEntry;
 import org.cloudfoundry.credhub.request.PermissionOperation;
 import org.cloudfoundry.credhub.request.StringGenerationParameters;
+import org.cloudfoundry.credhub.view.FindCredentialResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -44,7 +46,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 @RunWith(JUnit4.class)
@@ -239,6 +245,22 @@ public class PermissionedCredentialServiceTest {
     } catch (EntryNotFoundException e) {
       assertThat(e.getMessage(), equalTo("error.credential.invalid_access"));
     }
+  }
+
+  @Test
+  public void findAllPaths_returnsCompleteDirectory_Structure() {
+    FindCredentialResult one = new FindCredentialResult(Instant.EPOCH, "/fubario");
+    FindCredentialResult two = new FindCredentialResult(Instant.EPOCH, "/value/Credential");
+    FindCredentialResult three = new FindCredentialResult(Instant.EPOCH, "/password/Credential");
+    FindCredentialResult four = new FindCredentialResult(Instant.EPOCH, "/certif/ic/ateCredential");
+
+    List<FindCredentialResult> list = Arrays.asList(one, two, three, four);
+
+    when(credentialVersionDataService.findStartingWithPath("/")).thenReturn(list);
+
+    assertThat(subject.findAllPaths(),
+        equalTo(newArrayList("/", "/certif/", "/certif/ic/", "/password/", "/value/")));
+
   }
 
   @Test

@@ -45,4 +45,8 @@ public class PermissionCheckingService {
     }
   }
 
+  public boolean enforcePermissions() {
+    return this.enforcePermissions;
+  }
+
 }

@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -17,7 +18,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import static org.cloudfoundry.credhub.helper.RequestHelper.generateCa;
 import static org.cloudfoundry.credhub.helper.RequestHelper.generatePassword;
+import static org.cloudfoundry.credhub.util.AuthConstants.UAA_OAUTH2_CLIENT_CREDENTIALS_TOKEN;
 import static org.cloudfoundry.credhub.util.AuthConstants.UAA_OAUTH2_PASSWORD_GRANT_TOKEN;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertTrue;
@@ -31,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(SpringRunner.class)
 @ActiveProfiles(value = "unit-test", resolver = DatabaseProfileResolver.class)
 @SpringBootTest(classes = CredentialManagerApp.class)
+@TestPropertySource(properties = "security.authorization.acls.enabled=true")
 @Transactional
 public class CredentialFindTest {
 
@@ -51,7 +55,10 @@ public class CredentialFindTest {
 
   @Test
   public void findCredentials_byNameLike_whenSearchTermContainsNoSlash_returnsCredentialMetadata() throws Exception {
-    ResultActions response = findCredentialsByNameLike();
+    generatePassword(mockMvc, credentialName, CredentialWriteMode.OVERWRITE.mode, 20);
+
+    String substring = credentialName.substring(4).toUpperCase();
+    ResultActions response = findCredentialsByNameLike(substring, UAA_OAUTH2_PASSWORD_GRANT_TOKEN);
 
     response.andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
@@ -59,16 +66,33 @@ public class CredentialFindTest {
   }
 
   @Test
+  public void findCredentials_byNameLike_whenUserDoesNotHavePermission_doesNotReturnCredential() throws Exception {
+    generateCa(mockMvc, "my-certificate", UAA_OAUTH2_PASSWORD_GRANT_TOKEN);
+
+    ResultActions response = findCredentialsByNameLike("/", UAA_OAUTH2_CLIENT_CREDENTIALS_TOKEN);
+
+    response.andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
+      .andExpect(jsonPath("$.credentials", hasSize(0)));
+  }
+
+  @Test
+  public void findCredentials_byPath_whenUserDoesNotHavePermission_doesNotReturnCredential() throws Exception {
+    generateCa(mockMvc, "my-certificate", UAA_OAUTH2_PASSWORD_GRANT_TOKEN);
+
+    ResultActions response = findCredentialsByPath("/", UAA_OAUTH2_CLIENT_CREDENTIALS_TOKEN);
+
+    response.andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
+      .andExpect(jsonPath("$.credentials", hasSize(0)));
+  }
+
+  @Test
   public void findCredentials_byPath_returnsCredentialMetaData() throws Exception {
     String substring = credentialName.substring(0, credentialName.lastIndexOf("/"));
     generatePassword(mockMvc, credentialName, CredentialWriteMode.OVERWRITE.mode, 20);
 
-    final MockHttpServletRequestBuilder getResponse = get("/api/v1/data?path=" + substring)
-        .header("Authorization", "Bearer " + UAA_OAUTH2_PASSWORD_GRANT_TOKEN)
-        .accept(APPLICATION_JSON);
+    ResultActions response = findCredentialsByPath(substring, UAA_OAUTH2_PASSWORD_GRANT_TOKEN);
 
-    mockMvc.perform(getResponse)
-        .andExpect(status().isOk())
+    response.andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
         .andExpect(jsonPath("$.credentials[0].name").value(credentialName));
   }
@@ -79,11 +103,9 @@ public class CredentialFindTest {
 
     assertTrue(credentialName.contains(path));
 
-    MockHttpServletRequestBuilder request = get("/api/v1/data?path=" + path.toUpperCase())
-        .header("Authorization", "Bearer " + UAA_OAUTH2_PASSWORD_GRANT_TOKEN)
-        .accept(APPLICATION_JSON);
+    ResultActions response = findCredentialsByPath(path.toUpperCase(), UAA_OAUTH2_PASSWORD_GRANT_TOKEN);
 
-    mockMvc.perform(request).andExpect(status().isOk())
+    response.andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
         .andExpect(jsonPath("$.credentials", hasSize(0)));
   }
@@ -96,11 +118,9 @@ public class CredentialFindTest {
 
     assertTrue(credentialName.startsWith(path));
 
-    final MockHttpServletRequestBuilder getRequest = get("/api/v1/data?path=" + path.toUpperCase())
-        .header("Authorization", "Bearer " + UAA_OAUTH2_PASSWORD_GRANT_TOKEN)
-        .accept(APPLICATION_JSON);
+    ResultActions response = findCredentialsByPath(path.toUpperCase(), UAA_OAUTH2_PASSWORD_GRANT_TOKEN);
 
-    mockMvc.perform(getRequest).andExpect(status().isOk())
+    response.andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
         .andExpect(jsonPath("$.credentials", hasSize(1)));
   }
@@ -111,52 +131,62 @@ public class CredentialFindTest {
 
     assertTrue(credentialName.startsWith(path));
 
-    final MockHttpServletRequestBuilder get = get("/api/v1/data?path=" + path)
-        .header("Authorization", "Bearer " + UAA_OAUTH2_PASSWORD_GRANT_TOKEN)
-        .accept(APPLICATION_JSON);
+    ResultActions response = findCredentialsByPath(path, UAA_OAUTH2_PASSWORD_GRANT_TOKEN);
 
-    mockMvc.perform(get).andExpect(status().isOk())
+    response.andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
         .andExpect(jsonPath("$.credentials", hasSize(0)));
   }
 
   @Test
-  public void findCredentials_byPath_savesTheAuditLog() throws Exception {
-    String substring = credentialName.substring(0, credentialName.lastIndexOf("/"));
-
-    generatePassword(mockMvc, credentialName, CredentialWriteMode.OVERWRITE.mode, 20);
-
-    final MockHttpServletRequestBuilder request = get("/api/v1/data?path=" + substring)
-        .header("Authorization", "Bearer " + UAA_OAUTH2_PASSWORD_GRANT_TOKEN)
-        .accept(APPLICATION_JSON);
-
-    mockMvc.perform(request);
-  }
-
-  @Test
   public void findCredentials_findingAllPaths_returnsAllPossibleCredentialsPaths() throws Exception {
-    final MockHttpServletRequestBuilder getRequest = get("/api/v1/data?paths=true")
-        .header("Authorization", "Bearer " + UAA_OAUTH2_PASSWORD_GRANT_TOKEN)
-        .accept(APPLICATION_JSON);
-
     generatePassword(mockMvc, "my-namespace/subTree/credential", CredentialWriteMode.OVERWRITE.mode, 20);
 
-    mockMvc.perform(getRequest)
-        .andExpect(status().isOk())
+    ResultActions response = findAllPaths(UAA_OAUTH2_PASSWORD_GRANT_TOKEN);
+
+    response.andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
         .andExpect(jsonPath("$.paths[0].path").value("/"))
         .andExpect(jsonPath("$.paths[1].path").value("/my-namespace/"))
         .andExpect(jsonPath("$.paths[2].path").value("/my-namespace/subTree/"));
   }
 
-  private ResultActions findCredentialsByNameLike() throws Exception {
-    generatePassword(mockMvc, credentialName, CredentialWriteMode.OVERWRITE.mode, 20);
-    String substring = credentialName.substring(4).toUpperCase();
+  @Test
+  public void findCredentials_findingAllPaths_returnsNoCredentialsIfUserHasNoPermissions() throws Exception {
+    generatePassword(mockMvc, "my-namespace/subTree/credential", CredentialWriteMode.OVERWRITE.mode, 20);
 
-    final MockHttpServletRequestBuilder get = get("/api/v1/data?name-like=" + substring)
-        .header("Authorization", "Bearer " + UAA_OAUTH2_PASSWORD_GRANT_TOKEN)
-        .accept(APPLICATION_JSON);
+    ResultActions response = findAllPaths(UAA_OAUTH2_CLIENT_CREDENTIALS_TOKEN);
+
+    response.andExpect(status().isOk())
+      .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
+      .andExpect(jsonPath("$.paths", hasSize(0)));
+  }
+
+  private ResultActions findCredentialsByNameLike(String pattern, String permissionsToken) throws Exception {
+    final MockHttpServletRequestBuilder get = get("/api/v1/data?name-like=" + pattern)
+        .header("Authorization", "Bearer " + permissionsToken)
+        .accept(APPLICATION_JSON)
+        .contentType(APPLICATION_JSON);
 
     return mockMvc.perform(get);
   }
+
+  private ResultActions findCredentialsByPath(String path, String permissionsToken) throws Exception {
+    final MockHttpServletRequestBuilder get = get("/api/v1/data?path=" + path)
+      .header("Authorization", "Bearer " + permissionsToken)
+      .accept(APPLICATION_JSON)
+      .contentType(APPLICATION_JSON);
+
+    return mockMvc.perform(get);
+  }
+
+  private ResultActions findAllPaths(String permissionsToken) throws Exception {
+    final MockHttpServletRequestBuilder get = get("/api/v1/data?paths=true")
+      .header("Authorization", "Bearer " + permissionsToken)
+      .accept(APPLICATION_JSON)
+      .contentType(APPLICATION_JSON);
+
+    return mockMvc.perform(get);
+  }
+
 }

@@ -24,8 +24,11 @@ import org.cloudfoundry.credhub.view.FindCredentialResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.cloudfoundry.credhub.request.PermissionOperation.DELETE;
 import static org.cloudfoundry.credhub.request.PermissionOperation.READ;
@@ -175,15 +178,17 @@ public class PermissionedCredentialService {
   }
 
   public List<FindCredentialResult> findStartingWithPath(String path) {
-    return credentialVersionDataService.findStartingWithPath(path);
+    return filterPermissions(credentialVersionDataService.findStartingWithPath(path));
   }
 
   public List<String> findAllPaths() {
-    return credentialVersionDataService.findAllPaths();
+    List<FindCredentialResult> filteredCredentials = filterPermissions(credentialVersionDataService.findStartingWithPath("/"));
+
+    return splitAllPaths(filteredCredentials);
   }
 
   public List<FindCredentialResult> findContainingName(String name) {
-    return credentialVersionDataService.findContainingName(name);
+    return filterPermissions(credentialVersionDataService.findContainingName(name));
   }
 
   public CredentialVersion findMostRecent(String credentialName) {
@@ -252,4 +257,49 @@ public class PermissionedCredentialService {
       throw new PermissionException("error.credential.invalid_access");
     }
   }
+
+  private List<FindCredentialResult> filterPermissions(List<FindCredentialResult> unfilteredResult) {
+    if (!permissionCheckingService.enforcePermissions()) {
+      return unfilteredResult;
+    }
+
+    List<FindCredentialResult> filteredResult = new ArrayList<>(unfilteredResult);
+
+    if(!unfilteredResult.isEmpty()) {
+      for (FindCredentialResult credentialResult : unfilteredResult) {
+        if (!permissionCheckingService
+          .hasPermission(userContextHolder.getUserContext().getActor(), credentialResult.getName(), READ)) {
+          filteredResult.remove(credentialResult);
+        }
+      }
+    }
+    return filteredResult;
+  }
+
+  private List<String> splitAllPaths(List<FindCredentialResult> filteredPaths) {
+    return filteredPaths
+      .stream()
+      .map(FindCredentialResult::getName)
+      .flatMap(PermissionedCredentialService::fullHierarchyForPath)
+      .distinct()
+      .sorted()
+      .collect(Collectors.toList());
+  }
+
+  private static Stream<String> fullHierarchyForPath(String path) {
+    String[] components = path.split("/");
+    if (components.length > 1) {
+      StringBuilder currentPath = new StringBuilder();
+      List<String> pathSet = new ArrayList<>();
+      for (int i = 0; i < components.length - 1; i++) {
+        String element = components[i];
+        currentPath.append(element).append('/');
+        pathSet.add(currentPath.toString());
+      }
+      return pathSet.stream();
+    } else {
+      return Stream.of();
+    }
+  }
+
 }
