@@ -52,7 +52,8 @@ public class GenerateHandlerTest {
     generationParameters = new StringGenerationParameters();
     accessControlEntries = new ArrayList<>();
     credentialVersion = mock(PasswordCredentialVersion.class);
-    when(credentialService.save(anyObject(), anyObject(), anyObject())).thenReturn(credentialVersion);
+    when(credentialVersion.getCredential()).thenReturn(mock(Credential.class));
+    when(credentialService.save(any(), any(), any())).thenReturn(credentialVersion);
   }
 
 

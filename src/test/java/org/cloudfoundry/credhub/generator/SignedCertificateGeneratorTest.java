@@ -5,6 +5,7 @@ import org.cloudfoundry.credhub.credential.CertificateCredentialValue;
 import org.cloudfoundry.credhub.domain.CertificateGenerationParameters;
 import org.cloudfoundry.credhub.request.CertificateGenerationRequestParameters;
 import org.cloudfoundry.credhub.util.CertificateReader;
+import org.cloudfoundry.credhub.util.CurrentTimeProvider;
 import org.cloudfoundry.credhub.util.PrivateKeyReader;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
@@ -35,6 +36,8 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -66,9 +69,9 @@ public class SignedCertificateGeneratorTest {
   private CertificateGenerationParameters certificateGenerationParameters;
   private KeyPairGenerator generator;
   private RandomSerialNumberGenerator serialNumberGenerator;
-  private DateTimeProvider timeProvider;
-  private Calendar now;
-  private Calendar later;
+  private CurrentTimeProvider timeProvider;
+  private Instant now;
+  private Instant later;
   private CertificateCredentialValue ca;
   private final int expectedDurationInDays = 10;
   private final String caName = "CN=ca DN,O=credhub";
@@ -93,12 +96,10 @@ public class SignedCertificateGeneratorTest {
 
   @Before
   public void beforeEach() throws Exception {
-    timeProvider = mock(DateTimeProvider.class);
-    now = Calendar.getInstance();
-    now.setTimeInMillis(1493066824);
-    later = (Calendar) now.clone();
-    later.add(Calendar.DAY_OF_YEAR, expectedDurationInDays);
-    when(timeProvider.getNow()).thenReturn(now);
+    timeProvider = mock(CurrentTimeProvider.class);
+    now = Instant.ofEpochMilli(1493066824);
+    later = now.plus(Duration.ofDays(expectedDurationInDays));
+    when(timeProvider.getInstant()).thenReturn(now);
     serialNumberGenerator = mock(RandomSerialNumberGenerator.class);
     when(serialNumberGenerator.generate()).thenReturn(BigInteger.valueOf(1337));
     jcaX509ExtensionUtils = new JcaX509ExtensionUtils();
@@ -113,10 +114,10 @@ public class SignedCertificateGeneratorTest {
     certificateGenerationParameters = defaultCertificateParameters();
 
     subject = new SignedCertificateGenerator(timeProvider,
-        serialNumberGenerator,
-        jcaContentSignerBuilder,
-        jcaX509CertificateConverter,
-        getBouncyCastleProvider()
+      serialNumberGenerator,
+      jcaContentSignerBuilder,
+      jcaX509CertificateConverter,
+      getBouncyCastleProvider()
     );
 
     caSubjectKeyIdentifier =
@@ -126,8 +127,8 @@ public class SignedCertificateGeneratorTest {
     JcaX509v3CertificateBuilder x509v3CertificateBuilder = new JcaX509v3CertificateBuilder(
         issuerDn,
         caSerialNumber,
-        Date.from(now.toInstant()),
-        Date.from(later.toInstant()),
+        Date.from(now),
+        Date.from(later),
         issuerDn,
         issuerKey.getPublic()
     );
@@ -173,8 +174,8 @@ public class SignedCertificateGeneratorTest {
     assertThat(generatedCertificate.getIssuerDN().getName(), containsString("O=credhub"));
 
     assertThat(generatedCertificate.getSerialNumber(), equalTo(BigInteger.valueOf(1337l)));
-    assertThat(generatedCertificate.getNotBefore().toString(), equalTo(Date.from(now.toInstant()).toString()));
-    assertThat(generatedCertificate.getNotAfter().toString(), equalTo(Date.from(later.toInstant()).toString()));
+    assertThat(generatedCertificate.getNotBefore().toString(), equalTo(Date.from(now).toString()));
+    assertThat(generatedCertificate.getNotAfter().toString(), equalTo(Date.from(later).toString()));
     assertThat(generatedCertificate.getSubjectDN().toString(), containsString("CN=my cert name"));
     assertThat(generatedCertificate.getPublicKey(), equalTo(generatedCertificateKeyPair.getPublic()));
     assertThat(generatedCertificate.getSigAlgName(), equalTo("SHA256WITHRSA"));

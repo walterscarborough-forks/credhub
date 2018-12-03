@@ -4,5 +4,5 @@ spring:
     password: root
     url: jdbc:postgresql://localhost:5432/credhub_test
 
-flyway:
-  locations: classpath:/db/migration/common,classpath:/db/migration/postgres
+  flyway:
+    locations: classpath:/db/migration/common,classpath:/db/migration/postgres

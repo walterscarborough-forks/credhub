@@ -12,6 +12,8 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.cloudfoundry.credhub.util.CurrentTimeProvider;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.stereotype.Component;
@@ -33,7 +35,7 @@ import static org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils.parseExtensionV
 @Component
 public class SignedCertificateGenerator {
 
-  private final DateTimeProvider timeProvider;
+  private final CurrentTimeProvider timeProvider;
   private final RandomSerialNumberGenerator serialNumberGenerator;
   private final JcaX509ExtensionUtils jcaX509ExtensionUtils;
   private JcaContentSignerBuilder jcaContentSignerBuilder;
@@ -42,7 +44,7 @@ public class SignedCertificateGenerator {
 
   @Autowired
   SignedCertificateGenerator(
-      DateTimeProvider timeProvider,
+      CurrentTimeProvider timeProvider,
       RandomSerialNumberGenerator serialNumberGenerator,
       JcaContentSignerBuilder jcaContentSignerBuilder,
       JcaX509CertificateConverter jcaX509CertificateConverter,
@@ -90,7 +92,7 @@ public class SignedCertificateGenerator {
       SubjectKeyIdentifier caSubjectKeyIdentifier,
       KeyPair keyPair,
       CertificateGenerationParameters params) throws Exception {
-    Instant now = timeProvider.getNow().toInstant();
+    Instant now = Instant.from(timeProvider.getInstant());
 
     BigInteger certificateSerialNumber = serialNumberGenerator.generate();
     BigInteger caSerialNumber =

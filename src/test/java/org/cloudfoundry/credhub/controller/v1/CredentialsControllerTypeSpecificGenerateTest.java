@@ -73,8 +73,8 @@ import static org.cloudfoundry.credhub.util.MultiJsonPathMatcher.multiJsonPath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.beans.SamePropertyValuesAs.samePropertyValuesAs;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -173,7 +173,7 @@ public class CredentialsControllerTypeSpecificGenerateTest {
       }
     };
 
-    TestParameterizer userParameterizer = new TestParameterizer("user", "null") {
+    TestParameterizer userParameterizer = new TestParameterizer("user", "{}") {
       ResultMatcher jsonAssertions() {
         return multiJsonPath(
             "$.value.username", USERNAME,

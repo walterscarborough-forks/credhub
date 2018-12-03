@@ -6,10 +6,10 @@ buildscript {
         maven { url("https://plugins.gradle.org/m2/") }
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.14.RELEASE")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.1.0.RELEASE")
         classpath("org.owasp:dependency-check-gradle:3.1.1")
         classpath("org.springframework.build.gradle:propdeps-plugin:0.0.7")
-        classpath("com.google.protobuf:protobuf-gradle-plugin:0.8.3")
+        classpath("com.google.protobuf:protobuf-gradle-plugin:0.8.6")
     }
 }
 
@@ -22,6 +22,7 @@ apply plugin: "idea"
 apply plugin: "org.springframework.boot"
 apply plugin: "org.owasp.dependencycheck"
 apply plugin: "com.google.protobuf"
+apply plugin: 'io.spring.dependency-management'
 
 jar {
     baseName = "credhub"
@@ -56,14 +57,15 @@ dependencies {
     testCompile("org.springframework.security:spring-security-test")
     testCompile("org.springframework.boot:spring-boot-starter-test")
 
-    compile("org.springframework.security:spring-security-jwt")
-    compile("org.springframework.security.oauth:spring-security-oauth2")
+    compile("org.springframework.security:spring-security-jwt:1.0.9.RELEASE")
+    compile('org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure:2.0.5.RELEASE')
+    compile('org.springframework.security.oauth:spring-security-oauth2:2.3.3.RELEASE')
 
     // DB
-    compile("org.postgresql:postgresql:42.2.1")
-    compile("org.mariadb.jdbc:mariadb-java-client:2.2.1")
-    compile("org.flywaydb:flyway-core:5.0.7")
-    compile("com.h2database:h2:1.4.196")
+    compile("org.postgresql:postgresql:42.2.4")
+    compile("org.mariadb.jdbc:mariadb-java-client")
+    compile("org.flywaydb:flyway-core")
+    compile("com.h2database:h2")
 
     // Other
     compile("org.passay:passay:1.3.0")
@@ -84,6 +86,11 @@ dependencies {
     compile "io.grpc:grpc-netty:${grpcVersion}"
     compile "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
+    //Java 11 (backfill modules that were used in Java 8)
+    compile("javax.xml.bind:jaxb-api:2.3.1")
+    compile("org.glassfish.jaxb:jaxb-runtime:2.3.1")
+    compile("javax.activation:javax.activation-api:1.2.0")
+
     testCompile("com.jayway.jsonpath:json-path-assert:2.4.0")
 }
 
@@ -96,8 +103,8 @@ task updateVersionFile(type: Exec) {
 }
 
 bootRun {
-    addResources = true
     dependsOn updateVersionFile
+    sourceResources sourceSets.main
     systemProperties = System.properties
     systemProperties["spring.profiles.active"] = System.getProperty("spring.profiles.active", "dev, dev-h2")
 }

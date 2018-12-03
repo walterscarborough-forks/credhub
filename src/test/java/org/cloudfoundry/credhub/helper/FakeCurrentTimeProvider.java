@@ -3,7 +3,9 @@ package org.cloudfoundry.credhub.helper;
 import org.cloudfoundry.credhub.util.CurrentTimeProvider;
 
 import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
 import java.util.Calendar;
+import java.util.Optional;
 
 public class FakeCurrentTimeProvider extends CurrentTimeProvider {
 
@@ -14,7 +16,7 @@ public class FakeCurrentTimeProvider extends CurrentTimeProvider {
   }
 
   @Override
-  public Calendar getNow() {
+  public Optional<TemporalAccessor> getNow() {
     throw new UnsupportedOperationException("not yet implemented");
   }
 

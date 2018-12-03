@@ -6,6 +6,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import java.security.Security;
 import java.time.Instant;
 import java.util.Calendar;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.function.Consumer;
 
@@ -17,7 +18,7 @@ public class TestHelper {
   public static Consumer<Long> mockOutCurrentTimeProvider(
       CurrentTimeProvider mockCurrentTimeProvider) {
     return (epochMillis) -> {
-      when(mockCurrentTimeProvider.getNow()).thenReturn(getNow(epochMillis));
+      when(mockCurrentTimeProvider.getNow()).thenReturn(Optional.of(Instant.ofEpochMilli(epochMillis)));
       when(mockCurrentTimeProvider.getInstant()).thenReturn(Instant.ofEpochMilli(epochMillis));
     };
   }

@@ -27,12 +27,12 @@ import static org.hamcrest.Matchers.isOneOf;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 @RunWith(JUnit4.class)
@@ -68,6 +68,7 @@ public class RegenerateHandlerTest {
   @Test
   public void handleRegenerate_addsToAuditRecord() {
     BaseCredentialGenerateRequest request = new PasswordGenerateRequest();
+    when(credentialVersion.getCredential()).thenReturn(mock(Credential.class));
     when(credentialService.findMostRecent(CREDENTIAL_NAME)).thenReturn(credentialVersion);
     when(generationRequestGenerator.createGenerateRequest(credentialVersion))
         .thenReturn(request);
@@ -140,7 +141,7 @@ public class RegenerateHandlerTest {
     verify(credentialService).save(any(), any(), eq(generateRequest1));
     verify(credentialService).save(any(), any(), eq(generateRequest2));
   }
-  
+
   @Test
   public void handleBulkRegenerate_regeneratesToNestedLevels() {
     when(credentialService.findAllCertificateCredentialsByCaName(SIGNER_NAME))
