@@ -6,15 +6,20 @@ function set_bash_error_handling() {
 
 function go_to_project_root_directory() {
     local -r script_dir=$( dirname "${BASH_SOURCE[0]}")
+
     cd "$script_dir/.."
 }
 
-function run_tests() {
+function run_tests_h2() {
+
     local -r test_mode=${1:-}
 
-    ./scripts/run_tests_postgres.sh
-    ./scripts/run_tests_mysql.sh
-    ./scripts/run_tests_h2.sh
+    local gradle_test_command="test"
+
+    echo "🚀 Running h2 tests"
+    echo ""
+
+    ./gradlew clean $gradle_test_command -Dspring.profiles.active=unit-test-h2
 }
 
 function main() {
@@ -23,7 +28,7 @@ function main() {
 
     local -r test_mode=${1:-}
 
-    run_tests "$test_mode"
+    run_tests_h2 "$test_mode"
 }
 
 main "$@"
