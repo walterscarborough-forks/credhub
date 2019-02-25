@@ -136,7 +136,7 @@ public class CredentialVersionDataService {
         " SELECT count(*) as count, encryption_key_uuid FROM credential_version " +
             "LEFT JOIN encrypted_value ON credential_version.encrypted_value_uuid = encrypted_value.uuid " +
             "GROUP BY encrypted_value.encryption_key_uuid",
-        (rowSet, rowNum) -> map.put(toUUID(rowSet.getString("encryption_key_uuid")), rowSet.getLong("count"))
+        (rowSet, rowNum) -> map.put(toUUID(rowSet.getObject("encryption_key_uuid")), rowSet.getLong("count"))
     );
     return map;
   }
