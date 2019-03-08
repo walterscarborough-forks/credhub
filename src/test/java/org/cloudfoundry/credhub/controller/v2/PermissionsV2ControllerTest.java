@@ -1,7 +1,9 @@
 package org.cloudfoundry.credhub.controller.v2;
 
+import java.util.Arrays;
 import java.util.UUID;
 
+import org.cloudfoundry.credhub.request.PermissionOperation;
 import org.cloudfoundry.credhub.request.PermissionsV2Request;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.JUnitRestDocumentation;
@@ -25,6 +27,8 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.restdocs.snippet.Attributes.key;
@@ -136,7 +140,7 @@ public class PermissionsV2ControllerTest {
     UUID guid = UUID.fromString("abcd1234-ab12-ab12-ab12-abcdef123456");
     final PermissionsV2View permissionsV2View = new PermissionsV2View(
             "some-path",
-            emptyList(),
+            Arrays.asList(PermissionOperation.READ, PermissionOperation.WRITE),
             "some-actor",
             guid
     );
@@ -151,14 +155,20 @@ public class PermissionsV2ControllerTest {
       .perform(
         post(PermissionsV2Controller.ENDPOINT)
           .contentType(MediaType.APPLICATION_JSON)
-          .accept(MediaType.APPLICATION_JSON)
-          .content("{\"path\":\"some-path\",\"actor\":\"some-actor\", \"operations\": []}")
+          .content("{\"path\":\"some-path\",\"actor\":\"some-actor\", \"operations\": [\"read\", \"write\"]}")
       )
       .andExpect(status().isCreated())
       .andDo(
         document(
           "{methodName}",
-          requestParameters()
+          requestFields(
+            fieldWithPath("path").description("The credential path").attributes(key("default").value("none"),
+              key("required").value("yes"), key("type").value("string")),
+            fieldWithPath("actor").description("The credential actor").attributes(key("default").value("none"),
+              key("required").value("yes"), key("type").value("string")),
+            fieldWithPath("operations").description("The list of permissions to be granted").attributes(key("default").value("none"),
+              key("required").value("yes"), key("type").value("array of strings"))
+          )
         )
       )
       .andReturn();
@@ -169,7 +179,7 @@ public class PermissionsV2ControllerTest {
 
 
     final String actualResponseBody = mvcResult.getResponse().getContentAsString();
-    final String expectedResponseBody = "{\"path\":\"some-path\",\"operations\":[],\"actor\":\"some-actor\",\"uuid\":\"abcd1234-ab12-ab12-ab12-abcdef123456\"}";
+    final String expectedResponseBody = "{\"path\":\"some-path\",\"operations\":[\"read\", \"write\"],\"actor\":\"some-actor\",\"uuid\":\"abcd1234-ab12-ab12-ab12-abcdef123456\"}";
     JSONAssert.assertEquals(expectedResponseBody, actualResponseBody, true);
   }
 
