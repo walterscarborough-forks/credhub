@@ -1,6 +1,7 @@
 package org.cloudfoundry.credhub.controller.v2;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.MediaType;
@@ -20,7 +21,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.skyscreamer.jsonassert.JSONAssert;
 
-import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
@@ -31,8 +31,11 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.requestF
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.restdocs.snippet.Attributes.key;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -66,7 +69,7 @@ public class PermissionsV2ControllerTest {
   public void GET__permissions_by_actor_and_path__returns_a_permission() throws Exception {
     final PermissionsV2View permissionsV2View = new PermissionsV2View(
       "some-path",
-      emptyList(),
+      Arrays.asList(PermissionOperation.READ, PermissionOperation.WRITE),
       "some-actor",
       UUID.fromString("abcd1234-ab12-ab12-ab12-abcdef123456")
     );
@@ -98,7 +101,7 @@ public class PermissionsV2ControllerTest {
     assertThat(spyPermissionsHandler.getFindByPathAndActorCalledWithActor(), equalTo("some-actor"));
     assertThat(spyPermissionsHandler.getFindByPathAndActorCalledWithPath(), equalTo("some-path"));
     final String actualResponseBody = mvcResult.getResponse().getContentAsString();
-    final String expectedResponseBody = "{\"path\":\"some-path\",\"operations\":[],\"actor\":\"some-actor\",\"uuid\":\"abcd1234-ab12-ab12-ab12-abcdef123456\"}";
+    final String expectedResponseBody = "{\"path\":\"some-path\",\"operations\":[\"read\", \"write\"],\"actor\":\"some-actor\",\"uuid\":\"abcd1234-ab12-ab12-ab12-abcdef123456\"}";
     JSONAssert.assertEquals(expectedResponseBody, actualResponseBody, true);
   }
 
@@ -107,7 +110,7 @@ public class PermissionsV2ControllerTest {
     UUID guid = UUID.fromString("abcd1234-ab12-ab12-ab12-abcdef123456");
     final PermissionsV2View permissionsV2View = new PermissionsV2View(
       "some-path",
-      emptyList(),
+      Arrays.asList(PermissionOperation.READ, PermissionOperation.WRITE),
       "some-actor",
       guid
     );
@@ -130,7 +133,7 @@ public class PermissionsV2ControllerTest {
 
     assertThat(spyPermissionsHandler.getGetPermissionsCalledWithGuid(), equalTo(guid));
     final String actualResponseBody = mvcResult.getResponse().getContentAsString();
-    final String expectedResponseBody = "{\"path\":\"some-path\",\"operations\":[],\"actor\":\"some-actor\",\"uuid\":\"abcd1234-ab12-ab12-ab12-abcdef123456\"}";
+    final String expectedResponseBody = "{\"path\":\"some-path\",\"operations\":[\"read\", \"write\"],\"actor\":\"some-actor\",\"uuid\":\"abcd1234-ab12-ab12-ab12-abcdef123456\"}";
     JSONAssert.assertEquals(expectedResponseBody, actualResponseBody, true);
   }
 
@@ -143,11 +146,13 @@ public class PermissionsV2ControllerTest {
             "some-actor",
             guid
     );
+
     final PermissionsV2Request expectedPermissionsV2Request = new PermissionsV2Request(
       "/some-path",
       "some-actor",
-      emptyList()
+      Arrays.asList(PermissionOperation.READ, PermissionOperation.WRITE)
     );
+
     spyPermissionsHandler.setreturn_writeV2Permissions(permissionsV2View);
 
     final MvcResult mvcResult = mockMvc
@@ -180,6 +185,119 @@ public class PermissionsV2ControllerTest {
     final String actualResponseBody = mvcResult.getResponse().getContentAsString();
     final String expectedResponseBody = "{\"path\":\"some-path\",\"operations\":[\"read\", \"write\"],\"actor\":\"some-actor\",\"uuid\":\"abcd1234-ab12-ab12-ab12-abcdef123456\"}";
     JSONAssert.assertEquals(expectedResponseBody, actualResponseBody, true);
+  }
+
+  @Test
+  public void DELETE__permissions_by_uuid__returns_a_permission() throws Exception {
+    String guid = "abcd1234-ab12-ab12-ab12-abcdef123456";
+    final PermissionsV2View permissionsV2View = new PermissionsV2View(
+      "some-path",
+      Arrays.asList(PermissionOperation.READ, PermissionOperation.WRITE),
+      "some-actor",
+      UUID.fromString(guid)
+    );
+    spyPermissionsHandler.setReturn_deletePermissions(permissionsV2View);
+
+    final MvcResult mvcResult = mockMvc
+      .perform(
+        delete(PermissionsV2Controller.ENDPOINT + "/" + guid)
+          .contentType(MediaType.APPLICATION_JSON)
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+      .andDo(
+        document(
+          "{methodName}",
+          requestParameters()
+        )
+      )
+      .andReturn();
+
+    assertThat(spyPermissionsHandler.getDeletePermissionsGuid(), equalTo(guid));
+    final String actualResponseBody = mvcResult.getResponse().getContentAsString();
+    final String expectedResponseBody = "{\"path\":\"some-path\",\"operations\":[\"read\", \"write\"],\"actor\":\"some-actor\",\"uuid\":\"abcd1234-ab12-ab12-ab12-abcdef123456\"}";
+    JSONAssert.assertEquals(expectedResponseBody, actualResponseBody, true);
+  }
+
+  @Test
+  public void PUT__permissions__returns_a_permission() throws Exception {
+    String guid = "abcd1234-ab12-ab12-ab12-abcdef123456";
+    final PermissionsV2View permissionsV2View = new PermissionsV2View(
+      "some-path",
+      Arrays.asList(PermissionOperation.READ, PermissionOperation.WRITE),
+      "some-actor",
+      UUID.fromString(guid)
+    );
+    spyPermissionsHandler.setReturn_putPermissions(permissionsV2View);
+
+    final MvcResult mvcResult = mockMvc
+      .perform(
+        put(PermissionsV2Controller.ENDPOINT + "/" + guid)
+          .contentType(MediaType.APPLICATION_JSON)
+          .content("{\"path\":\"some-path\",\"actor\":\"some-actor\", \"operations\": [\"read\", \"write\"]}")
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+      .andDo(
+        document(
+          "{methodName}",
+          requestFields(
+            fieldWithPath("path").description("The credential path").attributes(key("default").value("none"),
+              key("required").value("yes"), key("type").value("string")),
+            fieldWithPath("actor").description("The credential actor").attributes(key("default").value("none"),
+              key("required").value("yes"), key("type").value("string")),
+            fieldWithPath("operations").description("The list of permissions to be granted").attributes(key("default").value("none"),
+              key("required").value("yes"), key("type").value("array of strings"))
+          )
+        )
+      )
+      .andReturn();
+
+    assertThat(spyPermissionsHandler.getPutPermissionGuid(), equalTo(guid));
+    final String actualResponseBody = mvcResult.getResponse().getContentAsString();
+    final String expectedResponseBody = "{\"path\":\"some-path\",\"operations\":[\"read\", \"write\"],\"actor\":\"some-actor\",\"uuid\":\"abcd1234-ab12-ab12-ab12-abcdef123456\"}";
+    JSONAssert.assertEquals(expectedResponseBody, actualResponseBody, true);
+  }
+
+  @Test
+  public void PATCH__permissions__returns_a_permission() throws Exception {
+    String guid = "abcd1234-ab12-ab12-ab12-abcdef123456";
+
+    final List<PermissionOperation> operations = Arrays.asList(PermissionOperation.READ, PermissionOperation.WRITE);
+
+    final PermissionsV2View permissionsV2View = new PermissionsV2View(
+      "some-path",
+      operations,
+      "some-actor",
+      UUID.fromString(guid)
+    );
+
+    spyPermissionsHandler.setReturn_patchPermissions(permissionsV2View);
+
+    final MvcResult mvcResult = mockMvc
+      .perform(
+        patch(PermissionsV2Controller.ENDPOINT + "/" + guid)
+          .contentType(MediaType.APPLICATION_JSON)
+          .content("{\"operations\": [\"read\", \"write\"]}")
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+      .andDo(
+        document(
+          "{methodName}",
+          requestFields(
+            fieldWithPath("operations").description("The list of permissions to be granted").attributes(key("default").value("none"),
+              key("required").value("yes"), key("type").value("array of strings"))
+          )
+        )
+      )
+      .andReturn();
+
+    assertThat(spyPermissionsHandler.getPatchPermissionGuid(), equalTo(guid));
+    final String actualResponseBody = mvcResult.getResponse().getContentAsString();
+    final String expectedResponseBody = "{\"path\":\"some-path\",\"operations\":[\"read\", \"write\"],\"actor\":\"some-actor\",\"uuid\":\"abcd1234-ab12-ab12-ab12-abcdef123456\"}";
+    JSONAssert.assertEquals(expectedResponseBody, actualResponseBody, true);
+
   }
 
 }

@@ -14,10 +14,18 @@ public class SpyPermissionsHandler implements PermissionsHandler {
   private String findByPathAndActorCalledWithPath;
   private String findByPathAndActorCalledWithActor;
   private PermissionsV2Request putPermissionsCalledWithRequest;
+  private PermissionsV2Request putPermissionRequest;
   private PermissionsV2View return_findByPathAndActor;
   private PermissionsV2View return_getPermissions;
   private PermissionsV2View return_writeV2Permissions;
+  private PermissionsV2View return_deletePermissions;
+  private PermissionsV2View return_putPermissions;
+  private PermissionsV2View return_patchPermissions;
   private UUID getPermissionsCalledWithGuid;
+  private String deletePermissionsGuid;
+  private String putPermissionGuid;
+  private String patchPermissionGuid;
+  private List<PermissionOperation> patchPermissionsOperations;
 
   public void setReturn_findByPathAndActor(final PermissionsV2View return_findByPathAndActor) {
     this.return_findByPathAndActor = return_findByPathAndActor;
@@ -47,6 +55,14 @@ public class SpyPermissionsHandler implements PermissionsHandler {
     this.getPermissionsCalledWithGuid = guid;
   }
 
+  public void setDeletePermissionsGuid(final String guid) {
+    this.deletePermissionsGuid = guid;
+  }
+
+  public void setReturn_deletePermissions(final PermissionsV2View return_deletePermissions) {
+    this.return_deletePermissions = return_deletePermissions;
+  }
+
   public void setreturn_writeV2PermissionCalledWithRequest(final PermissionsV2Request request) {
     this.putPermissionsCalledWithRequest = request;
   }
@@ -57,6 +73,42 @@ public class SpyPermissionsHandler implements PermissionsHandler {
 
   public UUID getGetPermissionsCalledWithGuid() {
     return getPermissionsCalledWithGuid;
+  }
+
+  public String getDeletePermissionsGuid() {
+    return deletePermissionsGuid;
+  }
+
+  public void setPutPermissionGuid(String guid) {
+    this.putPermissionGuid = guid;
+  }
+
+  public String getPutPermissionGuid() {
+    return this.putPermissionGuid;
+  }
+
+  public void setPutPermissionsRequest(final PermissionsV2Request permissionsRequest) {
+    this.putPermissionRequest = permissionsRequest;
+  }
+
+  public PermissionsV2Request getPutPermissionsRequest() {
+    return this.putPermissionRequest;
+  }
+
+  public void setPatchPermissionGuid(final String guid) {
+    this.patchPermissionGuid = guid;
+  }
+
+  public String getPatchPermissionGuid() {
+    return this.patchPermissionGuid;
+  }
+
+  public void setPatchPermissionsOperations(final List<PermissionOperation> operations) {
+    this.patchPermissionsOperations = operations;
+  }
+
+  public List<PermissionOperation> getPatchPermissionsOperations() {
+    return this.patchPermissionsOperations;
   }
 
   @Override
@@ -92,12 +144,16 @@ public class SpyPermissionsHandler implements PermissionsHandler {
 
   @Override
   public PermissionsV2View putPermissions(final String guid, final PermissionsV2Request permissionsRequest) {
-    return null;
+    setPutPermissionGuid(guid);
+    setPutPermissionsRequest(permissionsRequest);
+    return return_putPermissions;
   }
 
   @Override
   public PermissionsV2View patchPermissions(final String guid, final List<PermissionOperation> operations) {
-    return null;
+    setPatchPermissionGuid(guid);
+    setPatchPermissionsOperations(operations);
+    return return_patchPermissions;
   }
 
   @Override
@@ -108,10 +164,19 @@ public class SpyPermissionsHandler implements PermissionsHandler {
 
   @Override
   public PermissionsV2View deletePermissions(final String guid) {
-    return null;
+    setDeletePermissionsGuid(guid);
+    return return_deletePermissions;
   }
 
   public PermissionsV2Request getWriteV2PermissionCalledWithRequest() {
     return putPermissionsCalledWithRequest;
+  }
+
+  public void setReturn_putPermissions(PermissionsV2View permissionsV2View) {
+    this.return_putPermissions = permissionsV2View;
+  }
+
+  public void setReturn_patchPermissions(PermissionsV2View permissionsV2View) {
+    this.return_patchPermissions = permissionsV2View;
   }
 }
