@@ -3,8 +3,6 @@ package org.cloudfoundry.credhub.controller.v2;
 import java.util.Arrays;
 import java.util.UUID;
 
-import org.cloudfoundry.credhub.request.PermissionOperation;
-import org.cloudfoundry.credhub.request.PermissionsV2Request;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -13,6 +11,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import org.cloudfoundry.credhub.handler.SpyPermissionsHandler;
+import org.cloudfoundry.credhub.request.PermissionOperation;
+import org.cloudfoundry.credhub.request.PermissionsV2Request;
 import org.cloudfoundry.credhub.view.PermissionsV2View;
 import org.junit.Before;
 import org.junit.Rule;
@@ -23,7 +23,6 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
@@ -144,8 +143,8 @@ public class PermissionsV2ControllerTest {
             "some-actor",
             guid
     );
-    final PermissionsV2Request permissionsV2Request = new PermissionsV2Request(
-      "some-path",
+    final PermissionsV2Request expectedPermissionsV2Request = new PermissionsV2Request(
+      "/some-path",
       "some-actor",
       emptyList()
     );
@@ -174,8 +173,8 @@ public class PermissionsV2ControllerTest {
       .andReturn();
 
     PermissionsV2Request actualPermissionsV2Request = spyPermissionsHandler.getWriteV2PermissionCalledWithRequest();
-    assertThat(actualPermissionsV2Request.getActor(), equalTo("some-actor"));
-    assertThat(actualPermissionsV2Request.getPath(), equalTo("/some-path"));
+    assertThat(actualPermissionsV2Request.getActor(), equalTo(expectedPermissionsV2Request.getActor()));
+    assertThat(actualPermissionsV2Request.getPath(), equalTo(expectedPermissionsV2Request.getPath()));
 
 
     final String actualResponseBody = mvcResult.getResponse().getContentAsString();
