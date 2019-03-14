@@ -119,7 +119,9 @@ public class SpyPermissionsHandler implements PermissionsHandler {
     this.putPermissionRequest = permissionsRequest;
   }
 
-  public PermissionsV2View getWriteV2Permission(){ return return_writeV2Permissions;}
+  public PermissionsV2View getWriteV2Permission() {
+    return return_writeV2Permissions;
+  }
 
   public PermissionsV2Request getWriteV2PermissionCalledWithRequest() {
     return putPermissionsCalledWithRequest;

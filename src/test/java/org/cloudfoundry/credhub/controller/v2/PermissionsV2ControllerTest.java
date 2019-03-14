@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import org.cloudfoundry.credhub.handler.SpyPermissionsHandler;
+import org.cloudfoundry.credhub.helper.OauthTokenFilter;
 import org.cloudfoundry.credhub.request.PermissionOperation;
 import org.cloudfoundry.credhub.request.PermissionsV2Request;
 import org.cloudfoundry.credhub.view.PermissionsV2View;
@@ -31,6 +32,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.requestF
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.restdocs.snippet.Attributes.key;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -56,10 +58,10 @@ public class PermissionsV2ControllerTest {
     mockMvc = MockMvcBuilders
       .standaloneSetup(permissionsV2Controller)
       .alwaysDo(print())
+      .apply(springSecurity(new OauthTokenFilter()))
       .apply(
               documentationConfiguration(this.restDocumentation)
               .operationPreprocessors()
-              .withRequestDefaults(prettyPrint())
               .withResponseDefaults(prettyPrint())
       )
       .build();
@@ -78,6 +80,7 @@ public class PermissionsV2ControllerTest {
     final MvcResult mvcResult = mockMvc
       .perform(
         get(PermissionsV2Controller.ENDPOINT)
+          .header("Authorization", "Bearer [some-token]")
           .contentType(MediaType.APPLICATION_JSON)
           .param("path", "some-path")
           .param("actor", "some-actor")
@@ -119,6 +122,7 @@ public class PermissionsV2ControllerTest {
     final MvcResult mvcResult = mockMvc
       .perform(
         get(PermissionsV2Controller.ENDPOINT + "/" + guid)
+          .header("Authorization", "Bearer [some-token]")
           .contentType(MediaType.APPLICATION_JSON)
       )
       .andExpect(status().isOk())
@@ -158,23 +162,11 @@ public class PermissionsV2ControllerTest {
     final MvcResult mvcResult = mockMvc
       .perform(
         post(PermissionsV2Controller.ENDPOINT)
+          .header("Authorization", "Bearer [some-token]")
           .contentType(MediaType.APPLICATION_JSON)
           .content("{\"path\":\"some-path\",\"actor\":\"some-actor\", \"operations\": [\"read\", \"write\"]}")
       )
       .andExpect(status().isCreated())
-      .andDo(
-        document(
-          "{methodName}",
-          requestFields(
-            fieldWithPath("path").description("The credential path").attributes(key("default").value("none"),
-              key("required").value("yes"), key("type").value("string")),
-            fieldWithPath("actor").description("The credential actor").attributes(key("default").value("none"),
-              key("required").value("yes"), key("type").value("string")),
-            fieldWithPath("operations").description("The list of permissions to be granted").attributes(key("default").value("none"),
-              key("required").value("yes"), key("type").value("array of strings"))
-          )
-        )
-      )
       .andReturn();
 
     PermissionsV2Request actualPermissionsV2Request = spyPermissionsHandler.getWriteV2PermissionCalledWithRequest();
@@ -201,6 +193,7 @@ public class PermissionsV2ControllerTest {
     final MvcResult mvcResult = mockMvc
       .perform(
         delete(PermissionsV2Controller.ENDPOINT + "/" + guid)
+          .header("Authorization", "Bearer [some-token]")
           .contentType(MediaType.APPLICATION_JSON)
       )
       .andExpect(status().isOk())
@@ -233,6 +226,7 @@ public class PermissionsV2ControllerTest {
     final MvcResult mvcResult = mockMvc
       .perform(
         put(PermissionsV2Controller.ENDPOINT + "/" + guid)
+          .header("Authorization", "Bearer [some-token]")
           .contentType(MediaType.APPLICATION_JSON)
           .content("{\"path\":\"some-path\",\"actor\":\"some-actor\", \"operations\": [\"read\", \"write\"]}")
       )
@@ -277,6 +271,7 @@ public class PermissionsV2ControllerTest {
     final MvcResult mvcResult = mockMvc
       .perform(
         patch(PermissionsV2Controller.ENDPOINT + "/" + guid)
+          .header("Authorization", "Bearer [some-token]")
           .contentType(MediaType.APPLICATION_JSON)
           .content("{\"operations\": [\"read\", \"write\"]}")
       )
@@ -318,6 +313,7 @@ public class PermissionsV2ControllerTest {
     final MvcResult mvcResult = mockMvc
       .perform(
         post(PermissionsV2Controller.ENDPOINT)
+          .header("Authorization", "Bearer [some-token]")
           .contentType(MediaType.APPLICATION_JSON)
           .content("{\"path\":\"some-path\",\"actor\":\"some-actor\", \"operations\": [\"read\", \"write\"]}")
       )
