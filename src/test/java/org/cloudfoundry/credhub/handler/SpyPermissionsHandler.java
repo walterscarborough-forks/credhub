@@ -35,6 +35,26 @@ public class SpyPermissionsHandler implements PermissionsHandler {
     this.return_getPermissions = return_getPermissions;
   }
 
+  public void setReturn_deletePermissions(final PermissionsV2View return_deletePermissions) {
+    this.return_deletePermissions = return_deletePermissions;
+  }
+
+  public void setReturn_patchPermissions(PermissionsV2View permissionsV2View) {
+    this.return_patchPermissions = permissionsV2View;
+  }
+
+  public void setReturn_putPermissions(PermissionsV2View permissionsV2View) {
+    this.return_putPermissions = permissionsV2View;
+  }
+
+  public void setReturn_writeV2Permissions(final PermissionsV2View return_writeV2Permissions) {
+    this.return_writeV2Permissions = return_writeV2Permissions;
+  }
+
+  public void setReturn_writeV2PermissionCalledWithRequest(final PermissionsV2Request request) {
+    this.putPermissionsCalledWithRequest = request;
+  }
+
   public String getFindByPathAndActorCalledWithPath() {
     return findByPathAndActorCalledWithPath;
   }
@@ -51,64 +71,58 @@ public class SpyPermissionsHandler implements PermissionsHandler {
     this.findByPathAndActorCalledWithActor = findByPathAndActorCalledWithActor;
   }
 
-  public void setGetPermissionsCalledWithGuid(final UUID guid) {
-    this.getPermissionsCalledWithGuid = guid;
-  }
-
-  public void setDeletePermissionsGuid(final String guid) {
-    this.deletePermissionsGuid = guid;
-  }
-
-  public void setReturn_deletePermissions(final PermissionsV2View return_deletePermissions) {
-    this.return_deletePermissions = return_deletePermissions;
-  }
-
-  public void setreturn_writeV2PermissionCalledWithRequest(final PermissionsV2Request request) {
-    this.putPermissionsCalledWithRequest = request;
-  }
-
-  public void setreturn_writeV2Permissions(final PermissionsV2View return_writeV2Permissions) {
-    this.return_writeV2Permissions = return_writeV2Permissions;
-  }
-
   public UUID getGetPermissionsCalledWithGuid() {
     return getPermissionsCalledWithGuid;
+  }
+
+  public void setGetPermissionsCalledWithGuid(final UUID guid) {
+    this.getPermissionsCalledWithGuid = guid;
   }
 
   public String getDeletePermissionsGuid() {
     return deletePermissionsGuid;
   }
 
-  public void setPutPermissionGuid(String guid) {
-    this.putPermissionGuid = guid;
-  }
-
-  public String getPutPermissionGuid() {
-    return this.putPermissionGuid;
-  }
-
-  public void setPutPermissionsRequest(final PermissionsV2Request permissionsRequest) {
-    this.putPermissionRequest = permissionsRequest;
-  }
-
-  public PermissionsV2Request getPutPermissionsRequest() {
-    return this.putPermissionRequest;
-  }
-
-  public void setPatchPermissionGuid(final String guid) {
-    this.patchPermissionGuid = guid;
+  public void setDeletePermissionsGuid(final String guid) {
+    this.deletePermissionsGuid = guid;
   }
 
   public String getPatchPermissionGuid() {
     return this.patchPermissionGuid;
   }
 
-  public void setPatchPermissionsOperations(final List<PermissionOperation> operations) {
-    this.patchPermissionsOperations = operations;
+  public void setPatchPermissionGuid(final String guid) {
+    this.patchPermissionGuid = guid;
   }
 
   public List<PermissionOperation> getPatchPermissionsOperations() {
     return this.patchPermissionsOperations;
+  }
+
+  public void setPatchPermissionsOperations(final List<PermissionOperation> operations) {
+    this.patchPermissionsOperations = operations;
+  }
+
+  public String getPutPermissionGuid() {
+    return this.putPermissionGuid;
+  }
+
+  public void setPutPermissionGuid(String guid) {
+    this.putPermissionGuid = guid;
+  }
+
+  public PermissionsV2Request getPutPermissionsRequest() {
+    return this.putPermissionRequest;
+  }
+
+  public void setPutPermissionsRequest(final PermissionsV2Request permissionsRequest) {
+    this.putPermissionRequest = permissionsRequest;
+  }
+
+  public PermissionsV2View getWriteV2Permission(){ return return_writeV2Permissions;}
+
+  public PermissionsV2Request getWriteV2PermissionCalledWithRequest() {
+    return putPermissionsCalledWithRequest;
   }
 
   @Override
@@ -124,7 +138,9 @@ public class SpyPermissionsHandler implements PermissionsHandler {
   }
 
   @Override
-  public void writePermissions(final PermissionsRequest request) {
+  public PermissionsV2View getPermissions(final UUID guid) {
+    setGetPermissionsCalledWithGuid(guid);
+    return return_getPermissions;
   }
 
   @Override
@@ -132,21 +148,9 @@ public class SpyPermissionsHandler implements PermissionsHandler {
   }
 
   @Override
-  public PermissionsV2View writePermissions(final PermissionsV2Request request) {
-    return null;
-  }
-
-  @Override
-  public PermissionsV2View getPermissions(final UUID guid) {
-    setGetPermissionsCalledWithGuid(guid);
-    return return_getPermissions;
-  }
-
-  @Override
-  public PermissionsV2View putPermissions(final String guid, final PermissionsV2Request permissionsRequest) {
-    setPutPermissionGuid(guid);
-    setPutPermissionsRequest(permissionsRequest);
-    return return_putPermissions;
+  public PermissionsV2View deletePermissions(final String guid) {
+    setDeletePermissionsGuid(guid);
+    return return_deletePermissions;
   }
 
   @Override
@@ -157,26 +161,24 @@ public class SpyPermissionsHandler implements PermissionsHandler {
   }
 
   @Override
-  public PermissionsV2View writeV2Permissions(final PermissionsV2Request permissionsRequest) {
-    setreturn_writeV2PermissionCalledWithRequest(permissionsRequest);
-    return return_writeV2Permissions;
+  public PermissionsV2View putPermissions(final String guid, final PermissionsV2Request permissionsRequest) {
+    setPutPermissionGuid(guid);
+    setPutPermissionsRequest(permissionsRequest);
+    return return_putPermissions;
   }
 
   @Override
-  public PermissionsV2View deletePermissions(final String guid) {
-    setDeletePermissionsGuid(guid);
-    return return_deletePermissions;
+  public void writePermissions(final PermissionsRequest request) {
   }
 
-  public PermissionsV2Request getWriteV2PermissionCalledWithRequest() {
-    return putPermissionsCalledWithRequest;
+  @Override
+  public PermissionsV2View writePermissions(final PermissionsV2Request request) {
+    return null;
   }
 
-  public void setReturn_putPermissions(PermissionsV2View permissionsV2View) {
-    this.return_putPermissions = permissionsV2View;
-  }
-
-  public void setReturn_patchPermissions(PermissionsV2View permissionsV2View) {
-    this.return_patchPermissions = permissionsV2View;
+  @Override
+  public PermissionsV2View writeV2Permissions(final PermissionsV2Request permissionsRequest) {
+    setReturn_writeV2PermissionCalledWithRequest(permissionsRequest);
+    return return_writeV2Permissions;
   }
 }

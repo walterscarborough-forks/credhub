@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -32,7 +31,7 @@ public class PermissionsV2Controller {
     this.permissionsHandler = permissionsHandler;
   }
 
-  @PostMapping(consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+  @RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
   @ResponseStatus(HttpStatus.CREATED)
   public PermissionsV2View postPermissions(@Validated @RequestBody final PermissionsV2Request permissionsRequest) {
     return permissionsHandler.writeV2Permissions(permissionsRequest);

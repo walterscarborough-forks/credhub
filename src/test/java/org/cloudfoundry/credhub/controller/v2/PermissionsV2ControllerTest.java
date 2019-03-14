@@ -153,7 +153,7 @@ public class PermissionsV2ControllerTest {
       Arrays.asList(PermissionOperation.READ, PermissionOperation.WRITE)
     );
 
-    spyPermissionsHandler.setreturn_writeV2Permissions(permissionsV2View);
+    spyPermissionsHandler.setReturn_writeV2Permissions(permissionsV2View);
 
     final MvcResult mvcResult = mockMvc
       .perform(
@@ -294,6 +294,50 @@ public class PermissionsV2ControllerTest {
       .andReturn();
 
     assertThat(spyPermissionsHandler.getPatchPermissionGuid(), equalTo(guid));
+    final String actualResponseBody = mvcResult.getResponse().getContentAsString();
+    final String expectedResponseBody = "{\"path\":\"some-path\",\"operations\":[\"read\", \"write\"],\"actor\":\"some-actor\",\"uuid\":\"abcd1234-ab12-ab12-ab12-abcdef123456\"}";
+    JSONAssert.assertEquals(expectedResponseBody, actualResponseBody, true);
+
+  }
+
+  @Test
+  public void POST__permissions__returns_a_permission() throws Exception {
+    String guid = "abcd1234-ab12-ab12-ab12-abcdef123456";
+
+    final List<PermissionOperation> operations = Arrays.asList(PermissionOperation.READ, PermissionOperation.WRITE);
+
+    final PermissionsV2View permissionsV2View = new PermissionsV2View(
+      "some-path",
+      operations,
+      "some-actor",
+      UUID.fromString(guid)
+    );
+
+    spyPermissionsHandler.setReturn_writeV2Permissions(permissionsV2View);
+
+    final MvcResult mvcResult = mockMvc
+      .perform(
+        post(PermissionsV2Controller.ENDPOINT)
+          .contentType(MediaType.APPLICATION_JSON)
+          .content("{\"path\":\"some-path\",\"actor\":\"some-actor\", \"operations\": [\"read\", \"write\"]}")
+      )
+      .andExpect(status().isCreated())
+      .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+      .andDo(
+        document(
+          "{methodName}",
+          requestFields(
+            fieldWithPath("path").description("The credential path").attributes(key("default").value("none"),
+              key("required").value("yes"), key("type").value("string")),
+            fieldWithPath("actor").description("The credential actor").attributes(key("default").value("none"),
+              key("required").value("yes"), key("type").value("string")),
+            fieldWithPath("operations").description("The list of permissions to be granted").attributes(key("default").value("none"),
+              key("required").value("yes"), key("type").value("array of strings"))
+          )
+        )
+      )
+      .andReturn();
+
     final String actualResponseBody = mvcResult.getResponse().getContentAsString();
     final String expectedResponseBody = "{\"path\":\"some-path\",\"operations\":[\"read\", \"write\"],\"actor\":\"some-actor\",\"uuid\":\"abcd1234-ab12-ab12-ab12-abcdef123456\"}";
     JSONAssert.assertEquals(expectedResponseBody, actualResponseBody, true);
