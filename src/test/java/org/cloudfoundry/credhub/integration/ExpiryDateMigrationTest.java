@@ -90,7 +90,7 @@ public class ExpiryDateMigrationTest {
   }
 
   @Test
-  public void getCertificate_WithInvalidCertFieldAndPrintsWarning() throws Exception {
+  public void getCertificate_WithInvalidCertField_printsWarning() {
     final String certificate = "-----BEGIN";
 
     final Credential credential = new Credential("test_malformed_credential");
@@ -101,6 +101,23 @@ public class ExpiryDateMigrationTest {
     versionData.setCa("ca");
     versionData.setCaName("ca_name");
     versionData.setCertificate(certificate);
+    versionData.setCredential(credential);
+
+    credentialVersionRepository.save(versionData);
+
+    subject.migrate();
+  }
+
+  @Test
+  public void getCertificate_WithEmptyCertField_printsWarning() {
+    final Credential credential = new Credential("test_empty_credential");
+    credentialRepository.save(credential);
+
+    final CertificateCredentialVersionData versionData = new CertificateCredentialVersionData();
+    versionData.setTransitional(true);
+    versionData.setCa("ca");
+    versionData.setCaName("ca_name");
+    versionData.setCertificate(null);
     versionData.setCredential(credential);
 
     credentialVersionRepository.save(versionData);
