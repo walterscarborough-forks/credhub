@@ -24,6 +24,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -34,7 +35,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 public class OAuth2ExtraValidationFilterTest {
 
-  private final static String ERROR_MESSAGE = "The request token identity zone does not match the UAA server authorized by CredHub. Please validate that your request token was issued by the UAA server authorized by CredHub and retry your request.";
   @Autowired
   private WebApplicationContext webApplicationContext;
   @SpyBean
@@ -42,14 +42,15 @@ public class OAuth2ExtraValidationFilterTest {
   @Autowired
   private CredentialVersionRepository credentialVersionRepository;
   private MockMvc mockMvc;
+  private final static String INVALID_TOKEN_IDENTITY_MESSAGE = "The request token identity zone does not match the UAA server authorized by CredHub. Please validate that your request token was issued by the UAA server authorized by CredHub and retry your request.";
+  private final static String EXPIRED_TOKEN_MESSAGE = "Access token expired";
 
   @Before
   public void beforeEach() throws Exception {
     mockMvc = MockMvcBuilders
-      .webAppContextSetup(webApplicationContext)
-      .apply(springSecurity())
-      .build();
-    when(oAuth2IssuerService.getIssuer()).thenReturn("https://example.com:8443/uaa/oauth/token");
+        .webAppContextSetup(webApplicationContext)
+        .apply(springSecurity())
+        .build();
   }
 
   @Test
@@ -57,53 +58,57 @@ public class OAuth2ExtraValidationFilterTest {
     when(oAuth2IssuerService.getIssuer()).thenReturn("https://valid-uaa:8443/uaa/oauth/token");
 
     this.mockMvc.perform(post("/api/v1/data")
-      .header("Authorization", "Bearer " + AuthConstants.VALID_ISSUER_JWT)
-      .accept(APPLICATION_JSON)
-      .contentType(APPLICATION_JSON)
-      .content("{  " +
-        "\"name\": \"/picard\", \n" +
-        "  \"type\": \"password\" \n" +
-        "}"))
-      .andExpect(status().isOk());
+        .header("Authorization", "Bearer " + AuthConstants.VALID_ISSUER_JWT)
+        .accept(APPLICATION_JSON)
+        .contentType(APPLICATION_JSON)
+        .content("{  " +
+            "\"name\": \"/sample-credential\", \n" +
+            "  \"type\": \"password\" \n" +
+            "}"))
+        .andExpect(status().isOk());
   }
 
   @Test
   public void whenGivenInvalidIssuer_returns401() throws Exception {
-    final MockHttpServletRequestBuilder request = post("/api/v1/data?name=/picard")
-      .header("Authorization", "Bearer " + AuthConstants.INVALID_ISSUER_JWT)
-      .accept(APPLICATION_JSON)
-      .contentType(APPLICATION_JSON)
-      .content(
-        "{  " +
-          "  \"name\": \"/picard\", \n" +
-          "  \"type\": \"password\" \n" +
-          "}"
-      );
+    when(oAuth2IssuerService.getIssuer()).thenReturn("https://example.com:8443/uaa/oauth/token");
+
+    final MockHttpServletRequestBuilder request = post("/api/v1/data?name=/sample-credential")
+        .header("Authorization", "Bearer " + AuthConstants.INVALID_ISSUER_JWT)
+        .accept(APPLICATION_JSON)
+        .contentType(APPLICATION_JSON)
+        .content(
+            "{  " +
+                "  \"name\": \"/sample-credential\", \n" +
+                "  \"type\": \"password\" \n" +
+                "}"
+        );
 
     this.mockMvc.perform(request)
-      .andExpect(status().isUnauthorized())
-      .andExpect(jsonPath("$.error_description").value(ERROR_MESSAGE));
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error_description").value(INVALID_TOKEN_IDENTITY_MESSAGE));
   }
 
   @Test
   public void whenGivenInvalidIssuer_onlyReturnsIntendedResponse() throws Exception {
-    final MockHttpServletRequestBuilder request = post("/api/v1/data?name=/picard")
-      .header("Authorization", "Bearer " + AuthConstants.INVALID_ISSUER_JWT)
-      .accept(APPLICATION_JSON)
-      .contentType(APPLICATION_JSON)
-      .content(
-        "{  " +
-          "  \"name\": \"/picard\", \n" +
-          "  \"type\": \"password\" \n" +
-          "}"
-      );
+    when(oAuth2IssuerService.getIssuer()).thenReturn("https://example.com:8443/uaa/oauth/token");
+
+    final MockHttpServletRequestBuilder request = post("/api/v1/data?name=/sample-credential")
+        .header("Authorization", "Bearer " + AuthConstants.INVALID_ISSUER_JWT)
+        .accept(APPLICATION_JSON)
+        .contentType(APPLICATION_JSON)
+        .content(
+            "{  " +
+                "  \"name\": \"/sample-credential\", \n" +
+                "  \"type\": \"password\" \n" +
+                "}"
+        );
 
     final String response = this.mockMvc.perform(request)
-      .andExpect(status().isUnauthorized())
-      .andExpect(jsonPath("$.error_description").value(ERROR_MESSAGE))
-      .andReturn()
-      .getResponse()
-      .getContentAsString();
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error_description").value(INVALID_TOKEN_IDENTITY_MESSAGE))
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
 
     // The response originally concatenated the error and the credential.
     final String expectedResponse = "{\"error\":\"invalid_token\",\"error_description\":\"The request token identity zone does not match the UAA server authorized by CredHub. Please validate that your request token was issued by the UAA server authorized by CredHub and retry your request.\"}";
@@ -114,16 +119,18 @@ public class OAuth2ExtraValidationFilterTest {
 
   @Test
   public void whenGivenMalformedToken_onlyReturnsIntendedResponse() throws Exception {
-    final MockHttpServletRequestBuilder request = post("/api/v1/data?name=/picard")
-      .header("Authorization", "Bearer " + AuthConstants.MALFORMED_TOKEN)
-      .accept(APPLICATION_JSON)
-      .contentType(APPLICATION_JSON)
-      .content(
-        "{  " +
-          "  \"name\": \"/picard\", \n" +
-          "  \"type\": \"password\" \n" +
-          "}"
-      );
+    when(oAuth2IssuerService.getIssuer()).thenReturn("https://example.com:8443/uaa/oauth/token");
+
+    final MockHttpServletRequestBuilder request = post("/api/v1/data?name=/sample-credential")
+        .header("Authorization", "Bearer " + AuthConstants.MALFORMED_TOKEN)
+        .accept(APPLICATION_JSON)
+        .contentType(APPLICATION_JSON)
+        .content(
+            "{  " +
+                "  \"name\": \"/sample-credential\", \n" +
+                "  \"type\": \"password\" \n" +
+                "}"
+        );
 
     final String response = this.mockMvc.perform(request)
       .andExpect(status().isUnauthorized())
@@ -141,16 +148,18 @@ public class OAuth2ExtraValidationFilterTest {
 
   @Test
   public void whenGivenValidTokenDoesNotMatchJWTSignature_onlyReturnsIntendedResponse() throws Exception {
-    final MockHttpServletRequestBuilder request = post("/api/v1/data?name=/picard")
-      .header("Authorization", "Bearer " + AuthConstants.INVALID_SIGNATURE_JWT)
-      .accept(APPLICATION_JSON)
-      .contentType(APPLICATION_JSON)
-      .content(
-        "{  " +
-          "  \"name\": \"/picard\", \n" +
-          "  \"type\": \"password\" \n" +
-          "}"
-      );
+    when(oAuth2IssuerService.getIssuer()).thenReturn("https://example.com:8443/uaa/oauth/token");
+
+    final MockHttpServletRequestBuilder request = post("/api/v1/data?name=/sample-credential")
+        .header("Authorization", "Bearer " + AuthConstants.INVALID_SIGNATURE_JWT)
+        .accept(APPLICATION_JSON)
+        .contentType(APPLICATION_JSON)
+        .content(
+            "{  " +
+                "  \"name\": \"/sample-credential\", \n" +
+                "  \"type\": \"password\" \n" +
+                "}"
+        );
 
     final String response = this.mockMvc.perform(request)
       .andExpect(status().isUnauthorized())
@@ -168,21 +177,37 @@ public class OAuth2ExtraValidationFilterTest {
 
   @Test
   public void whenGivenNullIssuer_returns401() throws Exception {
-    this.mockMvc.perform(post("/api/v1/data?name=/picard")
-      .header("Authorization", "Bearer " + AuthConstants.NULL_ISSUER_JWT)
-      .accept(APPLICATION_JSON)
-      .contentType(APPLICATION_JSON))
-      .andExpect(status().isUnauthorized())
-      .andExpect(jsonPath("$.error_description").value(ERROR_MESSAGE));
+    when(oAuth2IssuerService.getIssuer()).thenReturn("https://example.com:8443/uaa/oauth/token");
+
+    this.mockMvc.perform(post("/api/v1/data?name=/sample-credential")
+        .header("Authorization", "Bearer " + AuthConstants.NULL_ISSUER_JWT)
+        .accept(APPLICATION_JSON)
+        .contentType(APPLICATION_JSON))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error_description").value(INVALID_TOKEN_IDENTITY_MESSAGE));
   }
 
   @Test
   public void whenEmptyIssuerSpecified_returns401() throws Exception {
-    this.mockMvc.perform(post("/api/v1/data?name=/picard")
-      .header("Authorization", "Bearer " + AuthConstants.EMPTY_ISSUER_JWT)
-      .accept(APPLICATION_JSON)
-      .contentType(APPLICATION_JSON))
-      .andExpect(status().isUnauthorized())
-      .andExpect(jsonPath("$.error_description").value(ERROR_MESSAGE));
+    when(oAuth2IssuerService.getIssuer()).thenReturn("https://example.com:8443/uaa/oauth/token");
+
+    this.mockMvc.perform(post("/api/v1/data?name=/sample-credential")
+        .header("Authorization", "Bearer " + AuthConstants.EMPTY_ISSUER_JWT)
+        .accept(APPLICATION_JSON)
+        .contentType(APPLICATION_JSON))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error_description").value(INVALID_TOKEN_IDENTITY_MESSAGE));
+  }
+
+  @Test
+  public void whenTokenIsHasExpired_returns401() throws Exception {
+    when(oAuth2IssuerService.getIssuer()).thenReturn("https://valid-uaa:8443/uaa/oauth/token");
+
+    this.mockMvc.perform(get("/api/v1/data?name=/sample-credential")
+            .header("Authorization", "Bearer " + AuthConstants.EXPIRED_TOKEN)
+            .accept(APPLICATION_JSON)
+            .contentType(APPLICATION_JSON))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error_description").value(EXPIRED_TOKEN_MESSAGE));
   }
 }
