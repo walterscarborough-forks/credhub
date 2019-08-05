@@ -1,15 +1,16 @@
 package org.cloudfoundry.credhub.services;
 
+import java.lang.reflect.InvocationTargetException;
 import java.security.Key;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.UUID;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 
 import org.springframework.beans.factory.annotation.Value;
 
@@ -17,7 +18,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.credhub.config.EncryptionKeyMetadata;
 import org.cloudfoundry.credhub.constants.CipherTypes;
+import org.cloudfoundry.credhub.entities.EncryptedValue;
 import org.cloudfoundry.credhub.util.TimedRetry;
+
+import static org.cloudfoundry.credhub.services.EncryptionKeyCanaryMapper.CHARSET;
 
 public class LunaEncryptionService extends InternalEncryptionService {
 
@@ -51,8 +55,28 @@ public class LunaEncryptionService extends InternalEncryptionService {
   }
 
   @Override
-  public AlgorithmParameterSpec generateParameterSpec(final byte[] nonce) {
-    return new IvParameterSpec(nonce);
+  public EncryptedValue encrypt(final UUID canaryUuid, final Key key, final String value) throws Exception {
+    final AlgorithmParameterSpec parameterSpec = generateParameterSpec(null);
+    final CipherWrapper encryptionCipher = getCipher();
+
+    encryptionCipher.init(Cipher.ENCRYPT_MODE, key, parameterSpec);
+
+    final byte[] encrypted = encryptionCipher.doFinal(value.getBytes(CHARSET));
+
+    return new EncryptedValue(canaryUuid, encrypted, encryptionCipher.getIV());
+  }
+
+  @Override
+  public AlgorithmParameterSpec generateParameterSpec(final byte[] iv) {
+    AlgorithmParameterSpec algorithmParameterSpec = null;
+    try {
+      algorithmParameterSpec = (AlgorithmParameterSpec) Class.forName("com.safenetinc.luna.provider.param.LunaGcmParameterSpec")
+        .getDeclaredConstructor(byte[].class, byte[].class, int.class)
+        .newInstance(iv, "AAD4".getBytes(), 128);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+    return algorithmParameterSpec;
   }
 
   @Override
