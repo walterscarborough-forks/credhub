@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        grpcVersion = '1.14.0'
+        grpcVersion = '1.23.0'
         nettyVersion = '4.1.29.Final'
     }
     repositories {
@@ -63,7 +63,7 @@ dependencies {
     implementation("org.apache.commons:commons-lang3:${apacheCommonsLang3Version}")
 
     //gRPC
-    implementation "com.google.api.grpc:proto-google-common-protos:1.12.0"
+    implementation "com.google.api.grpc:proto-google-common-protos:1.16.0"
     implementation "io.grpc:grpc-services:${grpcVersion}"
 
     //gRPC - Netty

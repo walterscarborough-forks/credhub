@@ -37,7 +37,7 @@ public class KMSEncryptionProvider implements EncryptionProvider {
         .eventLoopGroup(new EpollEventLoopGroup())
         .channelType(EpollDomainSocketChannel.class)
         .negotiationType(NegotiationType.PLAINTEXT)
-        .keepAliveTime(GrpcUtil.DEFAULT_KEEPALIVE_TIME_NANOS, TimeUnit.NANOSECONDS)
+        .keepAliveTime(GrpcUtil.DEFAULT_KEEPALIVE_TIMEOUT_NANOS, TimeUnit.NANOSECONDS)
         .build());
   }
 
